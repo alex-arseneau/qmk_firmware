@@ -1,22 +1,37 @@
-# pi60_rgb
+# blitzpad (MacroPad v2)
 
-The pi60 is a solderable 60% pcb supporting millions of configuration options including standard options like ansi, iso, and tsangan as well as various split-shift and split-space configurations with three possible encoder positions. The board has RGB underglow with 21 leds and is compatible with many o-ring mount cases. The pcb is available with USB and an external i2c connector, or daughterboard connector.
+A personal 20-key macropad built on an RP2040.
 
-* Keyboard Maintainer: [ziptyze](https://github.com/ziptyze)
+* 4x5 key matrix
+* Rotary encoder (volume by default)
+* 128x32 SSD1306 OLED on I2C0 (GP20/GP21)
+* 20 WS2812 per-key LEDs on GP19
 
-Make example for this keyboard (after setting up your build environment):
+## Building
 
-    make 1upkeyboards/pi60:default
+    make macropad/v2:default
+    make macropad/v2:via
 
-Flashing example for this keyboard:
+Flash by copying the resulting `.uf2` onto the `RPI-RP2` drive, or:
 
-    make 1upkeyboards/pi60:default:flash
+    make macropad/v2:via:flash
 
-See the [build environment setup](https://docs.qmk.fm/#/getting_started_build_tools) and the [make instructions](https://docs.qmk.fm/#/getting_started_make_guide) for more information. Brand new to QMK? Start with our [Complete Newbs Guide](https://docs.qmk.fm/#/newbs).
+## Keymaps
+
+* `default`: fixed keymap with the ChatGPT and Ctrl+U, K macros built in.
+* `via`: remappable with [VIA](https://usevia.app). The OLED shows the action of the last key pressed for 5 seconds.
+
+## VIA
+
+The pad is not in VIA's public keyboard list, so load `keyboards/macropad/via.json` once in VIA's Design tab.
+
+VIA's lighting menu selects effects by number, so the effects enabled in `keyboard.json` must stay in the same order as that menu; a static assert in the `via` keymap checks this. The reactive and splash effects are left disabled because they did not work with VIA.
+
+## Lighting
+
+The LEDs turn off after 20 minutes without a key press or encoder turn (`rgb_matrix.timeout` in `keyboard.json`), and when the host suspends.
 
 ## Bootloader
 
-Enter the bootloader in 2 ways:
-
-* **Bootmagic reset**: Hold down the key at (0,0) in the matrix (usually the top left key or Escape) and plug in the keyboard
-* **Bootloader button**: Hold the button on the back of the PCB and plug in the keyboard
+* **Bootmagic reset**: hold the top-left key while plugging in the pad.
+* **Double-tap reset**: press the reset button twice within one second.

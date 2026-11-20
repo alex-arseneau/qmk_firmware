@@ -107,16 +107,12 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         display_text(text[record->event.key.row][record->event.key.col]);
     }
 
-    // Encoder keys won't trigger a refresh of the RGB Matrix, so we do it here
-    // to ensure the suspend timer is reset if they are pressed.
     switch (keycode) {
     case KC_VOLU:
         display_text(PSTR("Volume Up"));
-        rgb_matrix_handle_key_event(0, 4, true);
         break;
     case KC_VOLD:
         display_text(PSTR("Volume Down"));
-        rgb_matrix_handle_key_event(0, 4, true);
         break;
     default:
         break;

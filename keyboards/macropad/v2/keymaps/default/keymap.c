@@ -15,7 +15,6 @@
  */
 
 #include QMK_KEYBOARD_H
-#include <quantum/deferred_exec.h>
 #include <stdint.h>
 
 enum custom_keycodes {
@@ -83,26 +82,7 @@ bool oled_task_user(void) {
     return false;
 }
 
-// Turns off the LED matrix when called.
-deferred_token led_disable_token = INVALID_DEFERRED_TOKEN;
-uint32_t led_matrix_disable(uint32_t trigger_time, void *cb_arg) {
-    // disable led matrix
-    rgb_matrix_disable_noeeprom();
-    return 0;
-}
-
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
-    // schedule led_matrix_disable to run in 20 minutes using defer_exec
-    if (record->event.pressed) {
-        bool needs_scheduling = true;
-        rgb_matrix_enable_noeeprom();
-        if (led_disable_token != INVALID_DEFERRED_TOKEN) {
-            needs_scheduling = !extend_deferred_exec(led_disable_token, 20 * 60 * 1000);
-        }
-
-        if (needs_scheduling)
-            led_disable_token = defer_exec(20 * 60 * 1000, led_matrix_disable, NULL);
-    }
     switch (keycode) {
         case CTRL_U_K:
             if (record->event.pressed) {
@@ -129,5 +109,4 @@ void keyboard_post_init_user(void) {
 
     rgb_matrix_enable();
     rgb_matrix_sethsv_noeeprom(140, 255, 100);
-    led_disable_token = defer_exec(20 * 60 * 1000, led_matrix_disable, NULL);
 }

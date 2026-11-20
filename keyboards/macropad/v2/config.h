@@ -10,8 +10,6 @@
 #define I2C1_SDA_PIN GP20
 #define I2C1_SCL_PIN GP21
 
-#define RGB_MATRIX_KEYPRESSES
-
 #define WS2812_PIO_USE_PIO1
 
 #define RP2040_BOOTLOADER_DOUBLE_TAP_RESET // Activates the double-tap behavior
