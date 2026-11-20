@@ -109,11 +109,11 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     switch (keycode) {
     case KC_VOLU:
         display_text(PSTR("Volume Up"));
-        process_rgb_matrix(0,4,true);
+        rgb_matrix_handle_key_event(0, 4, true);
         break;
     case KC_VOLD:
         display_text(PSTR("Volume Down"));
-        process_rgb_matrix(0,4,true);
+        rgb_matrix_handle_key_event(0, 4, true);
         break;
     default:
         break;
@@ -151,7 +151,7 @@ bool oled_task_user(void) {
 #endif
 
 void keyboard_post_init_user(void) {
-    setPinOutput(GP25);
-    writePinHigh(GP25);
+    gpio_set_pin_output(GP25);
+    gpio_write_pin_high(GP25);
     rgb_matrix_enable();
 }

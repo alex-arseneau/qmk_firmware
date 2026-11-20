@@ -23,7 +23,7 @@
 #define RGB_MATRIX_FRAMEBUFFER_EFFECTS
 #define RGB_MATRIX_KEYPRESSES
 #define RGB_MATRIX_MAXIMUM_BRIGHTNESS 200
-#define RGB_DISABLE_WHEN_USB_SUSPENDED  // turn off effects when suspended
+#define RGB_MATRIX_SLEEP // turn off effects when suspended
 // 20 seconds (20 * 60 * 1000)
 #define RGB_MATRIX_TIMEOUT 1200000
 

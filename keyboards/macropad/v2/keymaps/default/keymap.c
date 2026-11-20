@@ -124,8 +124,8 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
 }
 
 void keyboard_post_init_user(void) {
-    setPinOutput(GP25);
-    writePinHigh(GP25);
+    gpio_set_pin_output(GP25);
+    gpio_write_pin_high(GP25);
 
     rgb_matrix_enable();
     rgb_matrix_sethsv_noeeprom(140, 255, 100);

@@ -29,7 +29,7 @@
         "rows": ["GP6", "GP7", "GP8", "GP9"]
     },
     "rgb_matrix": {
-        "driver": "WS2812",
+        "driver": "ws2812",
         "layout": [
             { "flags": 2, "x": 40, "y": 60 },
             { "flags": 2, "x": 30, "y": 60 },
