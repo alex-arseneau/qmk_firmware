@@ -19,7 +19,7 @@ Flash by copying the resulting `.uf2` onto the `RPI-RP2` drive, or:
 ## Keymaps
 
 * `default`: fixed keymap with the ChatGPT and Ctrl+U, K macros built in.
-* `via`: remappable with [VIA](https://usevia.app). The OLED shows the action of the last key pressed for 5 seconds.
+* `via`: remappable with [VIA](https://usevia.app). The OLED shows the action of the last key pressed for 5 seconds. The top-left key toggles a mouse jiggler, which nudges the pointer a few pixels every 1-5 seconds to keep the computer awake; it appears in VIA as the custom key "Jiggle".
 
 ## VIA
 

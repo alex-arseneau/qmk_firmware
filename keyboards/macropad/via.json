@@ -4,6 +4,9 @@
     "productId": "0x5015",
     "matrix": {"rows": 4, "cols": 5},
     "menus": ["qmk_rgb_matrix"],
+    "customKeycodes": [
+        {"name": "Mouse Jiggler", "title": "Toggle the mouse jiggler", "shortName": "Jiggle"}
+    ],
     "layouts": {
         "labels": [],
         "keymap":

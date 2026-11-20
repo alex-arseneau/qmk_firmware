@@ -22,10 +22,14 @@
 _Static_assert(RGB_MATRIX_PIXEL_FRACTAL == 30 && RGB_MATRIX_DIGITAL_RAIN == 32, "RGB effect numbers no longer match VIA's lighting menu");
 
 
+enum custom_keycodes {
+    MS_JIGL = QK_KB_0, // must stay in step with customKeycodes in via.json
+};
+
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
     [0] = LAYOUT_20_ansi(
-        KC_F1,         KC_MPRV,                KC_MPLY,            KC_MNXT,            KC_MUTE,
+        MS_JIGL,       KC_MPRV,                KC_MPLY,            KC_MNXT,            KC_MUTE,
         KC_F11,         LSFT(KC_F11),           KC_F10,             LSFT(KC_F9),        KC_F9,
         KC_F12,         LSFT(KC_F12),           S(KC_ENT),          LCTL(KC_D),         KC_F5,
         LCTL(KC_MINS),  LSFT(LCTL(KC_MINS)),    LCTL(LSFT(KC_B)),   LCTL(LSFT(KC_R)),   KC_F1
@@ -93,6 +97,15 @@ uint32_t display_logo(uint32_t trigger_time, void* args) {
     return 0;
 }
 
+static deferred_token jiggle_token = INVALID_DEFERRED_TOKEN;
+
+// Nudges the pointer up to 10 px in a random direction, then reschedules itself 1-5 s later.
+uint32_t jiggle(uint32_t trigger_time, void* args) {
+    report_mouse_t report = {.x = rand() % 21 - 10, .y = rand() % 21 - 10};
+    host_mouse_send(&report);
+    return 1000 + rand() % 4000;
+}
+
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     static deferred_token logoDelay = INVALID_DEFERRED_TOKEN;
     static char PROGMEM * text[4][5] = {
@@ -108,6 +121,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
     }
 
     switch (keycode) {
+    case MS_JIGL:
+        if (record->event.pressed) {
+            if (jiggle_token == INVALID_DEFERRED_TOKEN) {
+                srand(timer_read32()); // press time varies, so each run moves differently
+                jiggle_token = defer_exec(1000, jiggle, NULL);
+            } else {
+                cancel_deferred_exec(jiggle_token);
+                jiggle_token = INVALID_DEFERRED_TOKEN;
+            }
+        }
+        display_text(jiggle_token == INVALID_DEFERRED_TOKEN ? PSTR("Jiggler Off") : PSTR("Jiggler On"));
+        break;
     case KC_VOLU:
         display_text(PSTR("Volume Up"));
         break;
