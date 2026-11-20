@@ -5,7 +5,7 @@
     "matrix": {"rows": 4, "cols": 5},
     "menus": ["qmk_rgb_matrix"],
     "customKeycodes": [
-        {"name": "Mouse Jiggler", "title": "Toggle the mouse jiggler", "shortName": "Jiggle"}
+        {"name": "HID Emulate", "title": "Toggle HID interaction emulation", "shortName": "HID Emu"}
     ],
     "layouts": {
         "labels": [],

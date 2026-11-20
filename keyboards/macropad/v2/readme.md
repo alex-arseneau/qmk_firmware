@@ -19,7 +19,18 @@ Flash by copying the resulting `.uf2` onto the `RPI-RP2` drive, or:
 ## Keymaps
 
 * `default`: fixed keymap with the ChatGPT and Ctrl+U, K macros built in.
-* `via`: remappable with [VIA](https://usevia.app). The OLED shows the action of the last key pressed for 5 seconds. The top-left key toggles a mouse jiggler that keeps the computer awake: it moves the pointer in smooth curved strokes with pauses in between, and flashes every LED red once a second while it is on. It appears in VIA as the custom key "Jiggle".
+* `via`: remappable with [VIA](https://usevia.app). The OLED shows the action of the last key pressed for 5 seconds. The top-left key toggles the HID interaction emulator, a source of realistic mouse and keyboard traffic for testing HID tooling; it flashes every LED red once a second while it is on. It appears in VIA as the custom key "HID Emu".
+
+## HID interaction emulator
+
+**It clicks and presses Tab and Alt+Tab on whatever has focus; it never types text. Only switch it on with the pad plugged into a test machine or with nothing on screen that a stray click or focus change could harm.**
+
+The emulator (`keymaps/via/hid_emulate.h`) mixes five kinds of activity: pointer moves, scrolling, left clicks, Tab and Alt+Tab. Tab and Alt are the only keys it sends.
+
+* **Session plan**: each switch-on draws its own mix, pace, burst length and rest length. Activity alternates between a reading phase (mostly moves and scrolling) and an interacting phase (more clicks and Tab presses).
+* **Bursts and rests**: a handful of actions, then a rest of seconds to at most three minutes, short enough that the computer also stays awake. Roughly two thirds of a session is rest.
+* **Moves**: each stroke draws one of six speed curves, a curved path and a duration that grows with distance and shrinks with target size. Some strokes overshoot or fall short and are corrected by one or two small follow-up strokes.
+* **Targets**: the pad cannot see the screen, so it imagines a window around the pointer's starting position with ten elements in it: small ones along the top and sides, larger scrollable ones in the middle. Most moves end on an element, with large and near ones picked more often. The window drifts between bursts and is re-laid on every Alt+Tab.
 
 ## VIA
 
