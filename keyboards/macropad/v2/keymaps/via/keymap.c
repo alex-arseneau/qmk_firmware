@@ -97,13 +97,82 @@ uint32_t display_logo(uint32_t trigger_time, void* args) {
     return 0;
 }
 
+#define JIGGLE_TICK_MS 8    // one mouse report per tick while moving, about the rate of a 125 Hz mouse
+#define JIGGLE_RANGE_X 1000 // how far the pointer roams left/right of where it was at switch-on, in mouse counts
+#define JIGGLE_RANGE_Y 300  // ...and how far up/down
+
 static deferred_token jiggle_token = INVALID_DEFERRED_TOKEN;
 
-// Nudges the pointer up to 10 px in a random direction, then reschedules itself 1-5 s later.
+static struct {
+    int16_t  x, y;           // pointer position relative to where it was when the jiggler was switched on
+    int16_t  from_x, from_y; // start of the current move
+    int16_t  to_x, to_y;     // end of the current move
+    float    bend;           // how far the path bows sideways, as a fraction of its length
+    uint32_t move_started;
+    uint16_t duration;       // ms the current move takes; 0 while pausing between moves
+    uint32_t started;        // when the jiggler was switched on; times the LED flash
+    bool     rgb_was_on;
+} jig;
+
+static int clamp(int value, int low, int high) {
+    return value < low ? low : value > high ? high : value;
+}
+
+static int rand_between(int low, int high) {
+    return low + rand() % (high - low + 1);
+}
+
+// Moves the pointer the way a hand does: a curved path that starts slow, speeds up and slows down again,
+// then a pause, then the next move. Each call sends at most one mouse report and returns the ms until the next call.
 uint32_t jiggle(uint32_t trigger_time, void* args) {
-    report_mouse_t report = {.x = rand() % 21 - 10, .y = rand() % 21 - 10};
-    host_mouse_send(&report);
-    return 1000 + rand() % 4000;
+    if (jig.duration == 0) {
+        // Pause over: pick the next move. One in four is a long sweep anywhere in range, the rest are short hops.
+        if (rand() % 4 == 0) {
+            jig.to_x = rand_between(-JIGGLE_RANGE_X, JIGGLE_RANGE_X);
+            jig.to_y = rand_between(-JIGGLE_RANGE_Y, JIGGLE_RANGE_Y);
+        } else {
+            jig.to_x = clamp(jig.x + rand_between(-200, 200), -JIGGLE_RANGE_X, JIGGLE_RANGE_X);
+            jig.to_y = clamp(jig.y + rand_between(-120, 120), -JIGGLE_RANGE_Y, JIGGLE_RANGE_Y);
+        }
+        jig.from_x = jig.x;
+        jig.from_y = jig.y;
+        jig.bend   = rand_between(-25, 25) / 100.0f;
+        // Longer moves take longer: about 0.3 s for a hop and over a second for a full sweep, varied by -20%..+30%.
+        jig.duration     = (200 + (abs(jig.to_x - jig.from_x) + abs(jig.to_y - jig.from_y)) * 2 / 5) * rand_between(80, 130) / 100;
+        jig.move_started = timer_read32();
+        // Count as pointer activity, so the RGB idle timeout does not switch off the red flash.
+        set_activity_timestamps(last_matrix_activity_time(), last_encoder_activity_time(), sync_timer_read32());
+        return JIGGLE_TICK_MS;
+    }
+
+    float u  = (float)timer_elapsed32(jig.move_started) / jig.duration;
+    if (u > 1) u = 1;
+    float s  = u * u * (3 - 2 * u); // ease in and out
+    float dx = jig.to_x - jig.from_x, dy = jig.to_y - jig.from_y;
+    // Quadratic Bezier curve: the control point sits to one side of the midpoint, which bows the path into an arc.
+    float cx = dx / 2 - dy * jig.bend, cy = dy / 2 + dx * jig.bend;
+    int   want_x = jig.from_x + (int)(2 * (1 - s) * s * cx + s * s * dx);
+    int   want_y = jig.from_y + (int)(2 * (1 - s) * s * cy + s * s * dy);
+
+    // A report holds -127..127 per axis; anything left over after a late tick is caught up on the next one.
+    report_mouse_t report = {.x = clamp(want_x - jig.x, -127, 127), .y = clamp(want_y - jig.y, -127, 127)};
+    jig.x += report.x;
+    jig.y += report.y;
+    if (report.x || report.y) host_mouse_send(&report);
+
+    if (u < 1 || jig.x != jig.to_x || jig.y != jig.to_y) return JIGGLE_TICK_MS;
+
+    // Arrived: pause, usually 0.3-1.8 s and one time in five up to 8 s longer.
+    jig.duration = 0;
+    return rand_between(300, 1800) + (rand() % 5 == 0 ? rand_between(0, 8000) : 0);
+}
+
+// While the jiggler runs, flash every LED red: half a second on, half a second off.
+bool rgb_matrix_indicators_user(void) {
+    if (jiggle_token != INVALID_DEFERRED_TOKEN) {
+        rgb_matrix_set_color_all(timer_elapsed32(jig.started) % 1000 < 500 ? RGB_MATRIX_MAXIMUM_BRIGHTNESS : 0, 0, 0);
+    }
+    return true;
 }
 
 bool process_record_user(uint16_t keycode, keyrecord_t *record) {
@@ -125,13 +194,18 @@ bool process_record_user(uint16_t keycode, keyrecord_t *record) {
         if (record->event.pressed) {
             if (jiggle_token == INVALID_DEFERRED_TOKEN) {
                 srand(timer_read32()); // press time varies, so each run moves differently
-                jiggle_token = defer_exec(1000, jiggle, NULL);
+                memset(&jig, 0, sizeof(jig));
+                jig.started    = timer_read32();
+                jig.rgb_was_on = rgb_matrix_is_enabled();
+                rgb_matrix_enable_noeeprom(); // the red flash needs the LEDs on, even if they were switched off in VIA
+                jiggle_token = defer_exec(JIGGLE_TICK_MS, jiggle, NULL);
             } else {
                 cancel_deferred_exec(jiggle_token);
                 jiggle_token = INVALID_DEFERRED_TOKEN;
+                if (!jig.rgb_was_on) rgb_matrix_disable_noeeprom();
             }
         }
-        display_text(jiggle_token == INVALID_DEFERRED_TOKEN ? PSTR("Jiggler Off") : PSTR("Jiggler On"));
+        display_text(jiggle_token == INVALID_DEFERRED_TOKEN ? PSTR("Stay Awake Off") : PSTR("Stay Awake On"));
         break;
     case KC_VOLU:
         display_text(PSTR("Volume Up"));
