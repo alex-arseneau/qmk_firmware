@@ -18,6 +18,9 @@
 #include <quantum/deferred_exec.h>
 #include <stdint.h>
 
+// VIA's built-in qmk_rgb_matrix menu sends effect numbers by position; keep the enabled effects in config.h aligned with it.
+_Static_assert(RGB_MATRIX_PIXEL_FRACTAL == 30 && RGB_MATRIX_DIGITAL_RAIN == 32, "RGB effect numbers no longer match VIA's lighting menu");
+
 
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
 
